@@ -11,15 +11,15 @@ var query = process.argv[3];
 var Twitter = require('twitter');
 var client = new Twitter(keys.twitter);
 var params = {screen_name: 'HelloLiri', count: 20};
+var twitterResults = "";
 
 //Spotify
 var Spotify = require('node-spotify-api');
 var spotify = new Spotify(keys.spotify);
+var spotifyResults = "";
 
-
-
-
-
+//OMDb
+var omdbResults = "";
 
 
 var LiriCommands = function() {
@@ -27,11 +27,17 @@ var LiriCommands = function() {
   case "my-tweets":
     client.get('statuses/user_timeline', params, function(error, tweets, response) {
         if (!error) {
-            console.log("\n" + "Tweets from newest to oldest:" + "\n")
+            console.log("\n" + "Tweets from newest to oldest:" + "\n");
+            twitterResults = `\r\nTweets from newest to oldest:\r\n`;
             for (var i = 0; i < tweets.length; i++){
                 console.log("Tweet " + (i+1) + ":  " +tweets[i].text);
+                twitterResults = twitterResults.concat(`Tweet ${i+1}: ${tweets[i].text}\r\n`);
             }
         }
+    fs.appendFile('./log.txt', twitterResults, (err) => {
+        if (err) throw err;
+        console.log('\r\nThe Twitter results have been appended to the log.txt file!');
+        });
     });
     break;
   case "spotify-this-song":
@@ -46,7 +52,16 @@ var LiriCommands = function() {
             console.log("Track Title: " + data.tracks.items[i].name); //Track Title
             console.log("Preview link: " + data.tracks.items[i].preview_url); //Preview Link            
             console.log("Album Title: " + data.tracks.items[i].album.name + "\n"); // Album Title
+            spotifyResults = spotifyResults.concat(`-----Result #${i+1} -----\r\n
+            Artist(s) name: ${data.tracks.items[i].artists[0].name}\r\n
+            Track Title: ${data.tracks.items[i].name}\r\n
+            Preview link: ${data.tracks.items[i].preview_url} \r\n          
+            Album Title: ${data.tracks.items[i].album.name}\r\n`);
             } 
+            fs.appendFile('./log.txt', spotifyResults, (err) => {
+                if (err) throw err;
+                console.log('The Spotify results have been appended to the log.txt file!');
+             });
         });
     break;
   case "movie-this":
@@ -65,8 +80,20 @@ var LiriCommands = function() {
             console.log("Language(s): " + JSON.parse(body).Language); // Language of the movie.
             console.log("Synopsis: " + JSON.parse(body).Plot); // Plot of the movie.
             console.log("Actors: " + JSON.parse(body).Actors); // Actors in the movie.
+            omdbResults = `Movie Title: ${JSON.parse(body).Title}\r\n
+            Movie Year: ${JSON.parse(body).Year}\r\n
+            IMDb Rating: ${JSON.parse(body).Ratings[0].Value}\r\n
+            Rotten Tomatoes Rating: ${JSON.parse(body).Ratings[1].Value}\r\n
+            Country: ${JSON.parse(body).Country}\r\n
+            Language(s): ${JSON.parse(body).Language}\r\n
+            Synopsis: ${JSON.parse(body).Plot}\r\n
+            Actors: ${JSON.parse(body).Actors}\r\n`;
         };
-});
+    fs.appendFile('./log.txt', omdbResults, (err) => {
+        if (err) throw err;
+        console.log('The Movie results have been appended to the log.txt file!');
+    });
+    });
     break;
     case "do-what-it-says":
         fs.readFile("./random.txt", 'utf8', function(err, data) {
